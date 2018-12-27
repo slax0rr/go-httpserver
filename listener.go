@@ -11,6 +11,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type listener struct {
+	Addr     string `json:"addr"`
+	FD       int    `json:"fd"`
+	Filename string `json:"filename"`
+}
+
 func importListener() (net.Listener, error) {
 	c, err := net.Dial("unix", cfg.SockFile)
 	if err != nil {
@@ -98,4 +104,30 @@ func getListener() (net.Listener, error) {
 	}
 
 	return ln, err
+}
+
+func sendListener(c net.Conn) error {
+	lnFile, err := getListenerFile(cfg.ln)
+	if err != nil {
+		return err
+	}
+	defer lnFile.Close()
+
+	l := listener{
+		Addr:     cfg.Addr,
+		FD:       3,
+		Filename: lnFile.Name(),
+	}
+
+	lnEnv, err := json.Marshal(l)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.Write(lnEnv)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

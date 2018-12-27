@@ -1,7 +1,6 @@
 package httpserver
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"time"
@@ -74,30 +73,4 @@ func socketListener(chn chan<- string, errChn chan<- error) {
 
 		chn <- "listener_sent"
 	}
-}
-
-func sendListener(c net.Conn) error {
-	lnFile, err := getListenerFile(cfg.ln)
-	if err != nil {
-		return err
-	}
-	defer lnFile.Close()
-
-	l := listener{
-		Addr:     cfg.Addr,
-		FD:       3,
-		Filename: lnFile.Name(),
-	}
-
-	lnEnv, err := json.Marshal(l)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.Write(lnEnv)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
