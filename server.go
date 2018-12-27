@@ -16,18 +16,6 @@ import (
 
 var cfg *Config
 
-func getListenerFile(ln net.Listener) (*os.File, error) {
-	switch t := ln.(type) {
-	case *net.TCPListener:
-		return t.File()
-
-	case *net.UnixListener:
-		return t.File()
-	}
-
-	return nil, fmt.Errorf("unsupported listener: %T", ln)
-}
-
 func fork() (*os.Process, error) {
 	// get the listener file
 	lnFile, err := getListenerFile(cfg.ln)

@@ -17,6 +17,18 @@ type listener struct {
 	Filename string `json:"filename"`
 }
 
+func getListenerFile(ln net.Listener) (*os.File, error) {
+	switch t := ln.(type) {
+	case *net.TCPListener:
+		return t.File()
+
+	case *net.UnixListener:
+		return t.File()
+	}
+
+	return nil, fmt.Errorf("unsupported listener: %T", ln)
+}
+
 func importListener() (net.Listener, error) {
 	c, err := net.Dial("unix", cfg.SockFile)
 	if err != nil {
