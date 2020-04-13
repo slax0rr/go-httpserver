@@ -147,3 +147,11 @@ func Serve(config Config, handler http.Handler) error {
 
 	return nil
 }
+
+func Stop(kill bool) error {
+	if kill {
+		return srv.Close()
+	}
+
+	return shutdown()
+}
