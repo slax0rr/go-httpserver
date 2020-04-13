@@ -13,6 +13,7 @@ import (
 )
 
 var cfg *Config
+var srv *http.Server
 
 func fork() (*os.Process, error) {
 	// get the listener file
@@ -86,7 +87,7 @@ func handleHangup() error {
 	return nil
 }
 
-func waitForSignals(srv *http.Server) error {
+func waitForSignals() error {
 	sig := make(chan os.Signal, 1024)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	for {
@@ -96,36 +97,33 @@ func waitForSignals(srv *http.Server) error {
 			case syscall.SIGHUP:
 				err := handleHangup()
 				if err == nil {
-					return shutdown(srv)
+					return shutdown()
 				}
 
 			case syscall.SIGTERM, syscall.SIGINT:
-				return shutdown(srv)
+				return shutdown()
 			}
 		}
 	}
 }
 
-func start(handler http.Handler) *http.Server {
+func start(handler http.Handler) {
 	http.Handle("/", handler)
 
-	srv := &http.Server{
+	srv = &http.Server{
 		Addr: cfg.Addr,
 	}
 
 	go srv.Serve(cfg.ln)
-
-	return srv
 }
 
-func shutdown(srv *http.Server) error {
+func shutdown() error {
 	log.Debug("Server shutting down")
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout*time.Second)
 	defer cancel()
 
 	err := srv.Shutdown(ctx)
-
 	log.WithError(err).Debug("Server shut down")
 
 	return err
@@ -140,9 +138,9 @@ func Serve(config Config, handler http.Handler) error {
 		log.WithError(err).Panic("Unable to create or import a listener")
 	}
 
-	srv := start(handler)
+	start(handler)
 
-	err = waitForSignals(srv)
+	err = waitForSignals()
 	if err != nil {
 		log.WithError(err).Info("Exiting with error")
 		return err
