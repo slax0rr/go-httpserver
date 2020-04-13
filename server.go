@@ -83,8 +83,6 @@ func handleHangup() error {
 			return err
 		}
 	}
-
-	return nil
 }
 
 func waitForSignals() error {
