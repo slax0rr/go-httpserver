@@ -106,10 +106,9 @@ func waitForSignals() error {
 }
 
 func start(handler http.Handler) {
-	http.Handle("/", handler)
-
 	srv = &http.Server{
-		Addr: cfg.Addr,
+		Addr:    cfg.Addr,
+		Handler: handler,
 	}
 
 	go srv.Serve(cfg.ln)
