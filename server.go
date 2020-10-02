@@ -126,6 +126,11 @@ func shutdown() error {
 	return err
 }
 
+// Serve starts a new listener and an HTTP server. It will also start listening
+// for system signals.
+//
+// SIGHUP - gracefully restart the server
+// SIGTERM - gracefully shutdown the server with timeout
 func Serve(config Config, handler http.Handler) error {
 	cfg = &config
 
@@ -148,6 +153,8 @@ func Serve(config Config, handler http.Handler) error {
 	return nil
 }
 
+// Stop gracefully stops the server. If 'true' is passed, the server will be
+// killed without gracefull shutting down open connections.
 func Stop(kill bool) error {
 	if kill {
 		return srv.Close()
