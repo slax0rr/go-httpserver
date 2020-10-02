@@ -86,7 +86,7 @@ func handleHangup() error {
 }
 
 func waitForSignals() error {
-	sig := make(chan os.Signal, 1024)
+	sig := make(chan os.Signal, cfg.SignalBufferSize)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		select {
@@ -132,7 +132,7 @@ func shutdown() error {
 // SIGHUP - gracefully restart the server
 // SIGTERM - gracefully shutdown the server with timeout
 func Serve(config Config, handler http.Handler) error {
-	cfg = &config
+	cfg = &getConfig(config)
 
 	var err error
 	cfg.ln, err = getListener()
