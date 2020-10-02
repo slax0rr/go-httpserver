@@ -29,8 +29,8 @@ func getListenerFile(ln net.Listener) (*os.File, error) {
 	return nil, fmt.Errorf("unsupported listener: %T", ln)
 }
 
-func importListener() (net.Listener, error) {
-	c, err := net.Dial("unix", cfg.SockFile)
+func importListener(addr, sockFile string) (net.Listener, error) {
+	c, err := net.Dial("unix", sockFile)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,8 @@ func importListener() (net.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
-	if l.Addr != cfg.Addr {
-		return nil, fmt.Errorf("unable to find listener for %v", cfg.Addr)
+	if l.Addr != addr {
+		return nil, fmt.Errorf("unable to find listener for %v", addr)
 	}
 
 	// the file has already been passed to this process, extract the file
@@ -89,8 +89,8 @@ func importListener() (net.Listener, error) {
 	return ln, nil
 }
 
-func createListener() (net.Listener, error) {
-	ln, err := net.Listen("tcp", cfg.Addr)
+func createListener(addr string) (net.Listener, error) {
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
@@ -98,11 +98,11 @@ func createListener() (net.Listener, error) {
 	return ln, nil
 }
 
-func getListener() (net.Listener, error) {
+func getListener(addr, sockFile string) (net.Listener, error) {
 	// try to import a listener if we are a fork
-	ln, err := importListener()
+	ln, err := importListener(addr, sockFile)
 	if err == nil {
-		log.WithField("addr", cfg.Addr).
+		log.WithField("addr", addr).
 			Debug("imported listener file descriptor")
 		return ln, nil
 	}
@@ -110,7 +110,7 @@ func getListener() (net.Listener, error) {
 	log.WithError(err).Info("listener not imported")
 
 	// couldn't import a listener, let's create one
-	ln, err = createListener()
+	ln, err = createListener(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -118,15 +118,15 @@ func getListener() (net.Listener, error) {
 	return ln, err
 }
 
-func sendListener(c net.Conn) error {
-	lnFile, err := getListenerFile(cfg.ln)
+func sendListener(addr string, ln net.Listener, c net.Conn) error {
+	lnFile, err := getListenerFile(ln)
 	if err != nil {
 		return err
 	}
 	defer lnFile.Close()
 
 	l := listener{
-		Addr:     cfg.Addr,
+		Addr:     addr,
 		FD:       3,
 		Filename: lnFile.Name(),
 	}

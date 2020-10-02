@@ -32,8 +32,8 @@ func acceptConn(l net.Listener) (c net.Conn, err error) {
 	return
 }
 
-func socketListener(chn chan<- string, errChn chan<- error) {
-	sockLn, err := net.Listen("unix", cfg.SockFile)
+func socketListener(addr, sockFile string, ln net.Listener, chn chan<- string, errChn chan<- error) {
+	sockLn, err := net.Listen("unix", sockFile)
 	if err != nil {
 		log.WithError(err).Error("Unable to start unix domain socket")
 		errChn <- err
@@ -63,7 +63,7 @@ func socketListener(chn chan<- string, errChn chan<- error) {
 	case "get_listener":
 		log.Debug("Fork requested listener information")
 
-		err := sendListener(c)
+		err := sendListener(addr, ln, c)
 		if err != nil {
 			log.WithError(err).
 				Error("Unable to send http listener socket over the unix domain socket")

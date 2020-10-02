@@ -1,7 +1,7 @@
 package httpserver
 
 import (
-	"net"
+	"errors"
 	"time"
 )
 
@@ -23,26 +23,33 @@ type Config struct {
 	// SignalBufferSize is the size of the buffer for the system signals.
 	// Defaults to 1.
 	SignalBufferSize int
-
-	ln net.Listener
 }
 
-func getConfig(cfg Config) Config {
+func (cfg Config) isValid() error {
 	if cfg.SockFile == "" {
-		cfg.SockFile = "/tmp/go-httpserver.sock"
+		return errors.New("socket file is required")
 	}
 
 	if cfg.Addr == "" {
-		cfg.Addr = ":3000"
+		return errors.New("server address is required")
 	}
 
 	if cfg.Timeout == 0 {
-		cfg.Timeout = 5 * time.Second
+		return errors.New("shutdown timeout must be greater than 0")
 	}
 
-	if cfg.SignalBufferSize == 0 {
-		cfg.SignalBufferSize = 1
+	if cfg.SignalBufferSize < 1 {
+		return errors.New("signal buffer size must be at least 1")
 	}
 
-	return cfg
+	return nil
+}
+
+func defaultConfig() *Config {
+	return &Config{
+		SockFile:         "/tmp/go-httpserver.sock",
+		Addr:             ":3000",
+		Timeout:          5 * time.Second,
+		SignalBufferSize: 1,
+	}
 }
